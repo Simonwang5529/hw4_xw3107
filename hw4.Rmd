@@ -1,0 +1,135 @@
+---
+title: "Instacart — Interactive Dashboard"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(plotly)
+library(flexdashboard)
+library(p8105.datasets)
+library(forcats)
+set.seed(1)
+```
+
+
+```{r}
+# Load the Instacart dataset 
+instacart = p8105.datasets::instacart
+
+
+n = nrow(instacart)
+
+size = min(50000, n)
+
+# Randomly sample rows for a lighter version of the dataset,
+small = instacart |>
+  slice_sample(n = size) |>  
+  mutate(
+    # Convert numeric day to ordered 
+    order_dow = factor(
+      order_dow,
+      levels = 0:6,
+      labels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+    ),
+    # Recode the binary reordered flag
+    reordered = factor(
+      reordered,
+      levels = c(0, 1),
+      labels = c("First time", "Reordered")
+    )
+  )
+```
+## Top 15 aisels Bar Plot
+```{r}
+top_aisles =
+  small |>
+  count(aisle, sort = TRUE) |>
+  slice_head(n = 15) |>
+  mutate(aisle = fct_reorder(aisle, n))
+
+p_bar =
+  ggplot(top_aisles, aes(x = aisle, y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Orders", title = "Top 15 Aisles")
+
+ggplotly(p_bar)
+```
+
+## Line plot
+```{r}
+hourly =
+  small |>
+  count(order_dow, order_hour_of_day, name = "orders")
+
+p_line =
+  ggplot(hourly, aes(x = order_hour_of_day, y = orders, group = order_dow)) +
+  geom_line() +
+  facet_wrap(~ order_dow, nrow = 2) +
+  labs(x = "Hour of day", y = "Orders", title = "Hourly Order Volume by Weekday")
+
+ggplotly(p_line)
+```
+## scatter plot
+```{r}
+scatter_sample =
+  small |>
+  slice_sample(n = min(10000, nrow(small))) |>
+  mutate(hover = paste0(
+    "Hour: ", order_hour_of_day,
+    "<br>Cart pos: ", add_to_cart_order,
+    "<br>Status: ", reordered
+  ))
+
+p_scatter =
+  plot_ly(
+    data = scatter_sample,
+    x = ~order_hour_of_day,
+    y = ~add_to_cart_order,
+    color = ~reordered,
+    type = "scatter",
+    mode = "markers",
+    text = ~hover,
+    hoverinfo = "text",
+    opacity = 0.5
+  ) |>
+  layout(
+    xaxis = list(title = "Hour of day"),
+    yaxis = list(title = "Add-to-cart position"),
+    title = "Cart Position vs Time of Day"
+  )
+
+p_scatter
+```
+## Box Plot
+```{r}
+dept_box =
+  small |>
+  filter(!is.na(days_since_prior_order)) |>
+  mutate(
+    department = fct_lump_n(department, n = 12),
+    department = fct_reorder(department, days_since_prior_order, .fun = median, na.rm = TRUE)
+  )
+
+p_box =
+  plot_ly(
+    data = dept_box,
+    x = ~department,
+    y = ~days_since_prior_order,
+    type = "box"
+  ) |>
+  layout(
+    xaxis = list(title = ""),
+    yaxis = list(title = "Days"),
+    title = "Time Between Orders by Department (Top 12, lumped)"
+  )
+
+p_box
+```
+
