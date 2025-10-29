@@ -17,7 +17,7 @@ library(forcats)
 set.seed(1)
 ```
 
-
+# Problem 2
 ```{r}
 # Load the Instacart dataset 
 instacart = p8105.datasets::instacart
@@ -62,7 +62,7 @@ p_bar =
 ggplotly(p_bar)
 ```
 
-## Line plot
+## Line plot: Hourly Order Volume by Weekday
 ```{r}
 hourly =
   small |>
@@ -76,7 +76,7 @@ p_line =
 
 ggplotly(p_line)
 ```
-## scatter plot
+## scatter plot: Cart Position vs Time of Day
 ```{r}
 scatter_sample =
   small |>
@@ -107,7 +107,7 @@ p_scatter =
 
 p_scatter
 ```
-## Box Plot
+## Box Plot: Time Between Orders by Department (Top 12, lumped)
 ```{r}
 dept_box =
   small |>
